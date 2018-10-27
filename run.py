@@ -11,23 +11,14 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, default='cifar10', help='choose dataset among cifar10 and mnist')
-    
-    args = parser.parse_args()    
-    if args.dataset == 'cifar10':
-        factor = CIFAR10_NORMALIZE_FACTOR
-        dataset = torchvision.datasets.CIFAR10
-        dest = 'data/cifar10'
-    elif args.dataset == 'mnist':
-        factor = MNIST_NORMALIZE_FACTOR
-        dataset = torchvision.datasets.MNIST
-        dest = 'data/mnist'
-    elif args.dataset == 'celeba':
-        factor = CELEBA_NORMALIZE_FACTOR
-    else:
-        raise RuntimeError("choose dataset among cifar10 and mnist")
+    parser.add_argument('--attrs', type=list, default=[], nargs='*')
+    parser.add_argument('--batch_size', type=int, default=64)
 
-    transform = torchvision.transforms.Compose(
-        [transforms.ToTensor(),
-        transforms.Normalize(factor[0], factor[1])]
-    )
-    
+    args = parser.parse_args()    
+
+    train_loader = get_loader(args.dataset, args.attrs, train=True)
+
+    for batch in train_loader:
+        print(batch[0].size())
+        print(batch[1].size())
+        break
