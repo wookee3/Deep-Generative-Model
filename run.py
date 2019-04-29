@@ -11,15 +11,14 @@ if __name__ == '__main__':
     torch.multiprocessing.freeze_support()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='cifar10', help='choose dataset among cifar10, mnist, celeba')
-    parser.add_argument('--attrs', type=list, default=[], nargs='*')
+    parser.add_argument('--dataset', type=str, default='mnist', help='choose dataset among cifar10, mnist, celeba')
     parser.add_argument('--batch_size', type=int, default=64)
 
     args = parser.parse_args()    
 
-    train_loader = get_loader(args.dataset, args.attrs, train=True)
+    train_loader = get_loader(args.dataset, 0, train=True)
 
     for batch in train_loader:
         print(batch[0].size())
-        print(batch[1].size())
+        print(batch[1])
         break

@@ -163,7 +163,32 @@ class CelebA(data.Dataset):
         return self.num_images
 
 
-def get_loader(dataset_name, selected_attrs=None, crop_size=178, image_size=128,
+class LabelMnist(MNIST):
+    def __init__(self, root, label, train=True, transform=None, target_transform=None, download=False):
+        super(LabelMnist, self).__init__(root, train, transform, target_transform, download)
+        self.idxs = [i for i in range(len(self.targets)) if self.targets[i] == label]
+
+    def __len__(self):
+        return len(self.idxs)
+
+    def __getitem__(self, index):
+        idx = self.idxs[index]
+        img, target = self.data[idx], int(self.targets[idx])
+
+        # doing this so that it is consistent with all other datasets
+        # to return a PIL Image
+        img = Image.fromarray(img.numpy(), mode='L')
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return img, target
+
+
+def get_loader(dataset_name, label=None, selected_attrs=None, crop_size=178, image_size=128,
                batch_size=16, train=True, num_workers=1):
     """Build and return a data loader."""
     dataset_name = dataset_name.lower()
@@ -192,7 +217,10 @@ def get_loader(dataset_name, selected_attrs=None, crop_size=178, image_size=128,
         dataset = CIFAR10(root_dir, train, transform, download=True)
     elif dataset_name == 'mnist':
         root_dir = 'data/mnist'
-        dataset = MNIST(root_dir, train, transform, download=True)
+        if label is None:
+            dataset = MNIST(root_dir, train, transform, download=True)
+        else:
+            dataset = LabelMnist(root_dir, label, train, transform, download=True)
     elif dataset_name == 'imagenet':
         root_dir = 'data/imagenet'
         dataset = ImageFolder(root_dir, transform)
@@ -206,3 +234,12 @@ def get_loader(dataset_name, selected_attrs=None, crop_size=178, image_size=128,
                                   num_workers=num_workers)
 
     return data_loader
+
+
+if __name__ == '__main__':
+    transform = T.Compose([T.ToTensor()])
+    
+    dataset = LabelMnist('data/mnist', 1, True, transform, download=True)
+    loader = data.DataLoader(dataset=dataset,
+                             batch_size=16,
+                             shuffle=True)
