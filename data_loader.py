@@ -4,8 +4,68 @@ from torchvision.datasets import ImageFolder, MNIST, CIFAR10
 from util.constant import NORMALIZE_FACTOR
 from PIL import Image
 import torch
-import os
+import os, sys
 import random
+import requests
+from six.moves import urllib
+
+
+def download(url, dirpath):
+    filename = url.split('/')[-1]
+    filepath = os.path.join(dirpath, filename)
+    u = urllib.request.urlopen(url)
+    f = open(filepath, 'wb')
+    filesize = int(u.headers["Content-Length"])
+    print("Downloading: %s Bytes: %s" % (filename, filesize))
+
+    downloaded = 0
+    block_sz = 8192
+    status_width = 70
+    while True:
+        buf = u.read(block_sz)
+        if not buf:
+            print('')
+            break
+        else:
+            print('')
+        downloaded += len(buf)
+        f.write(buf)
+        status = (("[%-" + str(status_width + 1) + "s] %3.2f%%") %
+                  ('=' * int(float(downloaded) / filesize * status_width) + '>', downloaded * 100. / filesize))
+        print(status)
+        sys.stdout.flush()
+    f.close()
+    return filepath
+
+
+def download_file_from_google_drive(id, destination):
+    def get_confirm_token(response):
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                return value
+
+        return None
+
+    def save_response_content(response, destination):
+        CHUNK_SIZE = 32768
+
+        with open(destination, "wb") as f:
+            for chunk in response.iter_content(CHUNK_SIZE):
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+
+    URL = "https://docs.google.com/uc?export=download"
+
+    session = requests.Session()
+
+    response = session.get(URL, params = {'id': id}, stream = True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = {'id': id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+
+    save_response_content(response, destination)
 
 
 # StarGan code
@@ -14,8 +74,9 @@ class CelebA(data.Dataset):
 
     def __init__(self, root, selected_attrs, transform, train=True, download=False):
         """Initialize and preprocess the CelebA dataset."""
+        self.root_path = root
         self.image_dir = os.path.join(root, "images")
-        self.attr_path = os.path.join(root, 'list_attr_celeba.txt')
+        self.attr_path = os.path.join(root, 'Anno', 'list_attr_celeba.txt')
         self.selected_attrs = selected_attrs
         self.transform = transform
         self.train = train
@@ -27,15 +88,38 @@ class CelebA(data.Dataset):
         # download celeba
         if download:
             pass
-        
+
         # preprocess
         self.preprocess()
-        
+
         # divide train and test
         if train:
             self.num_images = len(self.train_dataset)
         else:
             self.num_images = len(self.test_dataset)
+
+    def download(self):
+        import zipfile
+
+        # download if not exists
+        if os.path.exists(self.root_path, "images"):
+            return
+        # make path
+        if not os.path.exists(self.root_path):
+            os.mkdir(self.root_path)
+
+        # download file
+        drive_id = "0B7EVK8r0v71pZjFTYXZWM3FlRnM"
+        filepath = os.path.join(self.root_path, "img_align_celeba.zip")
+        download_file_from_google_drive(drive_id, filepath)
+
+        # unzip
+        zip_dir = ''
+        with zipfile.ZipFile(filepath) as zf:
+            zip_dir = zf.namelist()[0]
+            zf.extractall(self.root_path)
+        os.remove(filepath)
+        os.rename(os.path.join(self.root_path, zip_dir), os.path.join(self.root_path, "images"))
 
     def preprocess(self):
         """Preprocess the CelebA attribute file."""
@@ -79,8 +163,8 @@ class CelebA(data.Dataset):
         return self.num_images
 
 
-def get_loader(dataset_name, selected_attrs=None, crop_size=178, image_size=128, 
-            batch_size=16, train=True, num_workers=1):
+def get_loader(dataset_name, selected_attrs=None, crop_size=178, image_size=128,
+               batch_size=16, train=True, num_workers=1):
     """Build and return a data loader."""
     dataset_name = dataset_name.lower()
 
@@ -107,6 +191,7 @@ def get_loader(dataset_name, selected_attrs=None, crop_size=178, image_size=128,
         root_dir = 'data/cifar10'
         dataset = CIFAR10(root_dir, train, transform, download=True)
     elif dataset_name == 'mnist':
+        root_dir = 'data/mnist'
         dataset = MNIST(root_dir, train, transform, download=True)
     elif dataset_name == 'imagenet':
         root_dir = 'data/imagenet'
@@ -116,8 +201,8 @@ def get_loader(dataset_name, selected_attrs=None, crop_size=178, image_size=128,
 
     # make dataloader
     data_loader = data.DataLoader(dataset=dataset,
-                                batch_size=batch_size,
-                                shuffle=train,
-                                num_workers=num_workers)
-    
+                                  batch_size=batch_size,
+                                  shuffle=train,
+                                  num_workers=num_workers)
+
     return data_loader
