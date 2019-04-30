@@ -1,0 +1,40 @@
+data_io:
+  root_path: 'data'
+  name: 'mnist'
+  label: 0
+  loader:
+    num_workers: 4
+    batch_size: 64
+    shuffle: False
+    drop_last: False
+    pin_memory: True
+
+model:
+  embedding_size: 128
+  
+experiment:
+  max_epoch: 100
+  lr: 0.0001
+  metrics:
+    - 'accuracy'
+  verbose: True
+
+optimizer:
+  sgd:
+    weight_decay: 0.0
+    momentum: 0
+    dampening: 0
+  adam:
+    betas:
+      - 0.9
+      - 0.999
+    eps: 0.00000001
+    weight_decay: 0.0
+    amsgrad: False
+  rmsprop:
+    beta:
+      0
+
+lr_scheduler:
+  exp:
+    test: 0

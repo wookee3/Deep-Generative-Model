@@ -4,3 +4,5 @@ NORMALIZE_FACTOR = {
     "imagenet": [(0.485, 0.456, 0.406), (0.229, 0.224, 0.225)],
     "celeba": [(0.5, 0.5, 0.5), (0.5, 0.5, 0.5)]
 }
+CROP_SIZE = 178
+IMAGE_SIZE = 128

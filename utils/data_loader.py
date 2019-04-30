@@ -1,13 +1,13 @@
 from torch.utils import data
 from torchvision import transforms as T
 from torchvision.datasets import ImageFolder, MNIST, CIFAR10
-from util.constant import NORMALIZE_FACTOR
 from PIL import Image
 import torch
 import os, sys
 import random
 import requests
 from six.moves import urllib
+from utils.constant import NORMALIZE_FACTOR, CROP_SIZE, IMAGE_SIZE
 
 
 def download(url, dirpath):
@@ -188,10 +188,10 @@ class LabelMnist(MNIST):
         return img, target
 
 
-def get_loader(dataset_name, label=None, selected_attrs=None, crop_size=178, image_size=128,
-               batch_size=16, train=True, num_workers=1):
+def get_loader(train, name, root_path, loader,
+               label=None, selected_attrs=None):
     """Build and return a data loader."""
-    dataset_name = dataset_name.lower()
+    dataset_name = name.lower()
 
     # build transform
     transform = []
@@ -199,8 +199,8 @@ def get_loader(dataset_name, label=None, selected_attrs=None, crop_size=178, ima
     if dataset_name == 'celeba':
         if train:
             transform.append(T.RandomHorizontalFlip())
-        transform.append(T.CenterCrop(crop_size))
-        transform.append(T.Resize(image_size))
+        transform.append(T.CenterCrop(CROP_SIZE))
+        transform.append(T.Resize(IMAGE_SIZE))
         transform.append(T.ToTensor())
         transform.append(T.Normalize(mean=factor[0], std=factor[1]))
     else:
@@ -209,29 +209,23 @@ def get_loader(dataset_name, label=None, selected_attrs=None, crop_size=178, ima
     transform = T.Compose(transform)
 
     # make dataset
+    root_dir = os.path.join(root_path, name)
     if dataset_name == 'celeba':
-        root_dir = 'data/CelebA_nocrop'
         dataset = CelebA(root_dir, selected_attrs, transform, train)
     elif dataset_name == 'cifar10':
-        root_dir = 'data/cifar10'
         dataset = CIFAR10(root_dir, train, transform, download=True)
     elif dataset_name == 'mnist':
-        root_dir = 'data/mnist'
         if label is None:
             dataset = MNIST(root_dir, train, transform, download=True)
         else:
             dataset = LabelMnist(root_dir, label, train, transform, download=True)
     elif dataset_name == 'imagenet':
-        root_dir = 'data/imagenet'
         dataset = ImageFolder(root_dir, transform)
     else:
         raise RuntimeError("not provided dataset")
 
     # make dataloader
-    data_loader = data.DataLoader(dataset=dataset,
-                                  batch_size=batch_size,
-                                  shuffle=train,
-                                  num_workers=num_workers)
+    data_loader = data.DataLoader(dataset=dataset, **loader)
 
     return data_loader
 
