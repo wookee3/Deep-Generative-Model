@@ -38,7 +38,7 @@ if __name__ == '__main__':
         np.random.seed(args.seed)
         random.seed(args.seed)
 
-    train_loader = get_loader(**data_config, train=True)
+    train_loader = get_loader(train=True, **data_config)
 
     for batch in train_loader:
         print(batch[0].size())
