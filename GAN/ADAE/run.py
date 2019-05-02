@@ -7,6 +7,7 @@ import argparse
 import torch
 import numpy as np
 import random
+import os
 
 
 if __name__ == '__main__':
@@ -18,7 +19,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # load configuration from yaml file
-    config = HParams.load(os.path.join(os.getcwd(), "hparams.yaml"))
+    config = HParams.load(os.path.join(os.path.dirname(os.path.abspath(__file__)), "hparams.yaml"))
     data_config = config.data_io
     model_config = config.model
     exp_config = config.experiment
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     check_asset_dir(asset_path, config)
     logger.logging_verbosity(1)
     logger.add_filehandler(os.path.join(asset_path, "log.txt"))
+    tf_logger = get_tflogger(asset_path)
     data_config['root_path'] = os.path.join(root_dir, data_config['root_path'])
     
     # seed
@@ -38,9 +40,13 @@ if __name__ == '__main__':
         np.random.seed(args.seed)
         random.seed(args.seed)
 
-    train_loader = get_loader(train=True, **data_config)
+    # get loader
+    inlinear_train_loader = get_loader(train=True, **data_config)
+    inlinear_test_loader = get_loader(train=False, **data_config)
+    data_config['label'] = None
+    outlinear_loader = get_loader(train=False, **data_config)
 
-    for batch in train_loader:
+    for batch in inlinear_train_loader:
         print(batch[0].size())
         print(batch[1])
         break
