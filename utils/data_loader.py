@@ -166,7 +166,10 @@ class CelebA(data.Dataset):
 class LabelMnist(MNIST):
     def __init__(self, root, label, train=True, transform=None, target_transform=None, download=False):
         super(LabelMnist, self).__init__(root, train, transform, target_transform, download)
-        self.idxs = [i for i in range(len(self.targets)) if self.targets[i] == label]
+        if label is None:
+            self.idxs = [i for i in range(len(self.targets))]
+        else:
+            self.idxs = [i for i in range(len(self.targets)) if self.targets[i] == label]
 
     def __len__(self):
         return len(self.idxs)
