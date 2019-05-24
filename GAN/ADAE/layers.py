@@ -8,6 +8,23 @@ def _single():
     pass
 
 
+def _init_weight(m):
+    if type(m) == nn.Linear:
+        pass
+    elif type(m) == nn.Conv3d:
+        pass
+    elif type(m) == nn.Conv2d:
+        pass
+    elif type(m) == nn.Conv1d:
+        pass
+    elif type(m) == nn.ConvTranspose3d:
+        pass
+    elif type(m) == nn.ConvTranspose2d:
+        pass
+    elif type(m) == nn.ConvTranspose1d:
+        pass
+
+
 # conv layer with SAME padding in tensorflow
 # TODO: padding == 'valid
 class Conv2d(nn.Module):
