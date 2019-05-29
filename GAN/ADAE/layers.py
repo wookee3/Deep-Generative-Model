@@ -9,19 +9,12 @@ def _single():
 
 
 def _init_weight(m):
-    if type(m) == nn.Linear:
+    class_name = m.__class__
+    if "Linear" in class_name:
         pass
-    elif type(m) == nn.Conv3d:
+    elif "Conv" in class_name:
         pass
-    elif type(m) == nn.Conv2d:
-        pass
-    elif type(m) == nn.Conv1d:
-        pass
-    elif type(m) == nn.ConvTranspose3d:
-        pass
-    elif type(m) == nn.ConvTranspose2d:
-        pass
-    elif type(m) == nn.ConvTranspose1d:
+    else:
         pass
 
 
@@ -91,10 +84,6 @@ class Deconv2d(nn.Module):
 class Deconv1d(nn.Module):
     def __init__(self, in_ch, out_ch, k_size, stride=1, dilation=1, padding='SAME', out_padding=0):
         super(Deconv1d, self).__init__()
-        if causal:
-            pass
-        else:
-            pass
         
     def forward(self, data):
         pass

@@ -1,7 +1,8 @@
 import os
 import datetime
 from utils import logger
-from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 
 
 def check_asset_dir(asset_path, config):
@@ -29,13 +30,13 @@ def get_tflogger(asset_path):
     return tf_logger
 
 
-def tensorboard_logging_result(tf_logger, step, results, **kwargs):
-    for tag, value in results.items():
-        if 'img' in tag:
-            tf_logger.add_image(tag, value, step)
-        elif 'hist' in tag:
-            tf_logger.add_histogram(tag, value, step)
-        elif 'pr' in tag:
-            tf_logger.add_pr_curve(tag, kwargs['labels'], kwargs['predictions'], step)
-        else:
-            tf_logger.add_scalaar(tag, value, step)
+# def tensorboard_logging_result(tf_logger, step, results, **kwargs):
+#     for tag, value in results.items():
+#         if 'img' in tag:
+#             tf_logger.add_image(tag, value, step)
+#         elif 'hist' in tag:
+#             tf_logger.add_histogram(tag, value, step)
+#         elif 'pr' in tag:
+#             tf_logger.add_pr_curve(tag, kwargs['labels'], kwargs['predictions'], step)
+#         else:
+#             tf_logger.add_scalaar(tag, value, step)

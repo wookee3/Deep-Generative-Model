@@ -9,6 +9,7 @@ import random
 import requests
 from six.moves import urllib
 from utils.constant import NORMALIZE_FACTOR, CROP_SIZE, IMAGE_SIZE
+from utils.data.augmentation import RetinaAugmenter
 
 
 def download(url, dirpath):
@@ -192,15 +193,15 @@ class LabelMnist(MNIST):
         return img, target
 
 
-class RSNADataset(data.Dataset):
-    def __init__(self, transform=None, dir_path=None, is_normal=True):
+class PneumoniaDataset(data.Dataset):
+    def __init__(self, transform=None, dir_path=None, is_train=True):
         self.transform = transform
         self.targets = dict()
         self.name = 'RSNA'
-        self.dir_path = dir_path
+        self.dir_path = os.path.join(dir_path, 'training') if is_train else os.path.join(dir_path, 'validation')
 
         # add to id list
-        with open(os.path.join(dir_path, 'labels.csv'), 'r') as f:
+        with open(os.path.join(self.dir_path, 'labels.csv'), 'r') as f:
             for line in f.readlines():
                 splitted = line.strip().split(',')
                 patient_id = splitted[0]
@@ -210,15 +211,16 @@ class RSNADataset(data.Dataset):
                     self.targets[patient_id] = []
                     continue
 
-                label_coord = [float(s) for s in label_coord]
-                # width, height to xmax, ymax
-                label_coord[2] += label_coord[0]
-                label_coord[3] += label_coord[1]
-                label_id = splitted[-1]
-                if patient_id in self.targets.keys():
-                    self.targets[patient_id] = self.targets[patient_id] + [(label_coord, label_id)]
-                else:
-                    self.targets[patient_id] = [(label_coord, label_id)]
+                if not is_train:
+                    label_coord = [float(s) for s in label_coord]
+                    # width, height to xmax, ymax
+                    label_coord[2] += label_coord[0]
+                    label_coord[3] += label_coord[1]
+                    label_id = splitted[-1]
+                    if patient_id in self.targets.keys():
+                        self.targets[patient_id] = self.targets[patient_id] + [(label_coord, label_id)]
+                    else:
+                        self.targets[patient_id] = [(label_coord, label_id)]
             f.close()
         self.ids = sorted(list(self.targets.keys()))
 
@@ -277,8 +279,6 @@ def get_loader(train, name, root_path, loader,
         transform.append(T.Resize(IMAGE_SIZE))
         transform.append(T.ToTensor())
         transform.append(T.Normalize(mean=factor[0], std=factor[1]))
-    elif dataset_name == 'rsna':
-        transform.append(T.ToTensor())
     else:
         transform.append(T.ToTensor())
         transform.append(T.Normalize(mean=factor[0], std=factor[1]))
@@ -297,6 +297,9 @@ def get_loader(train, name, root_path, loader,
             dataset = LabelMnist(root_dir, label, train, transform, download=True)
     elif dataset_name == 'imagenet':
         dataset = ImageFolder(root_dir, transform)
+    elif dataset_name == 'pneumonia':
+        augmenter = RetinaAugmenter(1024, train)
+        dataset = PneumoniaDataset(augmenter, root_dir)
     else:
         raise RuntimeError("not provided dataset")
 
@@ -307,9 +310,17 @@ def get_loader(train, name, root_path, loader,
 
 
 if __name__ == '__main__':
-    transform = T.Compose([T.ToTensor()])
+    # transform = T.Compose([T.ToTensor()])
     
-    dataset = LabelMnist('data/mnist', 1, True, transform, download=True)
-    loader = data.DataLoader(dataset=dataset,
-                             batch_size=16,
-                             shuffle=True)
+    # dataset = LabelMnist('data/mnist', 1, True, transform, download=True)
+    # loader = data.DataLoader(dataset=dataset,
+    #                          batch_size=16,
+    #                          shuffle=True)
+
+    # pneumonia dataset test
+    transform = RetinaTransform(1024, False)
+    root_path = 'D:\\dataset\\image\\pneumonia\\training'
+    dataset = RSNADataset(transform, root_path, is_normal=False)
+    print(dataset[0])
+    print(dataset[1])
+    print(dataset[4])
